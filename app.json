@@ -2,9 +2,10 @@
   "expo": {
     "name": "Undercast",
     "slug": "Undercast",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "sdkVersion": "38.0.0",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -22,5 +23,8 @@
     "web": {
       "favicon": "./assets/favicon.png"
     }
+  },
+  "android": {
+    "package": "com.robrussell.undercast"
   }
 }
