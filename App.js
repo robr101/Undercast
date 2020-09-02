@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {View, Text, Button, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert} from 'react-native';
+import {View, Text, Button, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, StatusBar} from 'react-native';
 
 import { Logs } from 'expo';
 
@@ -10,6 +10,7 @@ import { Utils } from './Utils';
 import { owm_api_key, here_api_key } from './apikey';
 import DayDisplay from './DayDisplay';
 import WeatherGauge from './WeatherGauge';
+import Locator from './Locator';
 import keyStore from './KeyStorage';
 
 
@@ -41,7 +42,7 @@ class App extends Component {
       savedLocations: [{lat: 0, lon: 0}],
       measurementSystem: "Imperial",
     },
-    location: {lat: 0, lon: 0},
+    location: {city: "Anywhere", state: "USA", lat: 0, lon: 0},
     weatherData: 'none',
     currentWeather: {
       cloudCover: 0,
@@ -114,6 +115,11 @@ class App extends Component {
 
 
   getWeatherData = async (lat, lon) => {
+
+    if (!lat || !lon) {
+      lat = this.state.location.lat;
+      lon = this.state.location.lon;
+    }
 
     try {
 
@@ -193,6 +199,12 @@ class App extends Component {
     var hourly = [];
     var nextHourPop = [];
 
+
+    if (!weatherJson.daily) {
+      console.error("No daily data in weatherJson");
+      return;
+    }
+
     weatherJson.daily.forEach((day) => {
       daily.push({
         dt: day.dt,
@@ -212,10 +224,19 @@ class App extends Component {
       
     });
 
+    if (!weatherJson.hourly) {
+      console.error("No hourly weather data in weatherJson");
+      return;
+    }
+
     weatherJson.hourly.forEach((hour) => {
       hour.date = new Date(hour.dt * 1000);
       hour.temp = Math.round(Utils.KtoF(hour.temp));
     });
+
+    if (!weatherJson.minutely) {
+      console.log("No minutely data in weatherJson");
+    }
 
     weatherJson.minutely.forEach(minute => minute.date = new Date(minute.dt * 1000));
 
@@ -279,14 +300,14 @@ class App extends Component {
       const res = await fetch(search_url);
       const loc_data = await res.json();
 
-      this.getWeatherData(loc_data.items[0].position.lat, loc_data.items[0].position.lng);
+      this.setState({
+        location: {
+          lat: loc_data.items[0].position.lat,
+          lon: loc_data.items[0].position.lng
+        }
+      });
 
-      // Alert.alert("Save Location?",
-      // "Do you want to save this location?",
-      // [
-      //   {text: "Save", onPress: this.saveLocation.bind(this)},
-      //   {text: "Cancel"},
-      // ]);
+      this.getWeatherData(loc_data.items[0].position.lat, loc_data.items[0].position.lng);
 
     } catch (e) {
       console.log("Error searching text from here api:");
@@ -324,8 +345,14 @@ class App extends Component {
 
     return (
       <View style={styles.container}>
-        
-        <TextInput style={styles.textLocation} placeholder={location_city + "," + location_state} onSubmitEditing={this.searchCity.bind(this)} />
+        <StatusBar hidden={true}/>
+        <Locator city={location_city} 
+                 state={location_state} 
+                 title={location_title} 
+                 searchCallback={this.searchCity.bind(this)} 
+                 getLocationCallback={this.getCurrentLocation.bind(this)}
+                 refreshCallback={this.getWeatherData.bind(this)}
+        />
         
         <View style={styles.currentContainer}>       
           <WeatherGauge data={gaugeData}/>
@@ -354,7 +381,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#a380c1",
+    height: 100
   },
   textLocation: {
     marginTop: 65,

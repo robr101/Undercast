@@ -26,5 +26,8 @@
   },
   "android": {
     "package": "com.robrussell.undercast"
+  },
+  "androidStatusBar": {
+    "statusBarHidden": true
   }
 }
