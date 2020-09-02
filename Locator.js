@@ -29,7 +29,7 @@ export default class Locator extends Component {
     }
 
     handleLocatorPress = (event) => {
-        alert("locator pressed!");
+        this.props.getLocationCallback();
     }
 
     handleRefreshPress = (event) => {
@@ -56,7 +56,7 @@ export default class Locator extends Component {
                         <Text style={styles.locationText}>{this.props.city + ", " + this.props.state}</Text>
                       </TouchableOpacity>
 
-                    : <TextInput ref={this.textInput} style={styles.searchInput} placeholder="search" onSubmitEditing={this._onSubmitEdit} />
+                    : <TextInput ref={this.textInput} style={styles.searchInput} placeholder="search" onSubmitEditing={this._onSubmitEdit} onBlur={(e) => this.setState({editing: false})} />
                 }
 
                 <TouchableOpacity onPress={this.handleRefreshPress}>

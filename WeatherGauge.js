@@ -336,7 +336,7 @@ class WeatherGauge extends Component {
 
         ctx.beginPath();
         ctx.arc(this.centerX, this.centerY, this.clockRadius + (this.clockThickness / 2), startRad, this.fullCircle);
-        ctx.fillStyle = "gray";
+        ctx.fillStyle = "#efefef";
         ctx.fill();
     }
 
@@ -637,7 +637,7 @@ class WeatherGauge extends Component {
             await this.drawBackgroundCircles(this.ctx, this.state.hourly);
             
             this.drawClockLabels(this.ctx);
-            this.drawNextHourPrecip(this.ctx, this.state.minutely);
+            // this.drawNextHourPrecip(this.ctx, this.state.minutely);
             this.draw12HourPrecip(this.ctx, this.state.hourly);            
             this.drawHourTicks(this.ctx);
 

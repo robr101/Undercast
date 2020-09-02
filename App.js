@@ -29,6 +29,12 @@ class App extends Component {
 
   _isMounted = false;
 
+  _location = {
+    city: "Anywhere",
+    state: "USA",
+    lat: 0,
+    lon: 0
+  }
 
 
   state = {
@@ -48,6 +54,7 @@ class App extends Component {
       cloudCover: 0,
       temp: -1000,
       desc: 'none',
+      icon: '01d'
     },
     // need at least 4 blanks because the main screen directly references daily[1-3]
     daily: [{max_temp: 0, min_temp: 0, desc: 'none', dt: 0, date: 0, pop: 0, icon: '01d.png'}, 
@@ -116,11 +123,6 @@ class App extends Component {
 
   getWeatherData = async (lat, lon) => {
 
-    if (!lat || !lon) {
-      lat = this.state.location.lat;
-      lon = this.state.location.lon;
-    }
-
     try {
 
       var here_reverse_url = `https://revgeocode.search.hereapi.com/v1/revgeocode?at=${lat}%2C${lon}&lang=en-US&apiKey=${here_api_key}`;
@@ -140,6 +142,23 @@ class App extends Component {
       console.error(err);
     }
     
+  }
+
+
+  refreshWeatherData = () => {
+    this.getWeatherData(this._location.lat, this._location.lon);
+  }
+
+
+
+  getWeatherAtCurrentLocation = async () => {
+    try {
+      const coords = await this.getCurrentLocation();
+      this.getWeatherData(coords.latitude, coords.longitude);
+    }  catch (e) {
+      console.log("Couldn't get weather at current location.");
+      console.error(e);
+    }
   }
 
   /**
@@ -175,6 +194,9 @@ class App extends Component {
       const location = await Location.getCurrentPositionAsync({});
       console.log(location);
       console.log(location.coords);
+
+      this._location.lat = location.coords.latitude;
+      this._location.lon = location.coords.longitude;
 
       return location.coords;
 
@@ -300,12 +322,16 @@ class App extends Component {
       const res = await fetch(search_url);
       const loc_data = await res.json();
 
-      this.setState({
-        location: {
-          lat: loc_data.items[0].position.lat,
-          lon: loc_data.items[0].position.lng
-        }
-      });
+      // tell the user if their search ended with no results, then exit
+      console.log("=================== loc_data.items: ==================");
+      console.log(loc_data.items);
+      if (loc_data.items.length === 0) {
+        alert(`No results for "${searchText}", try a different search`);
+        return;
+      }
+
+      this._location.lat = loc_data.items[0].position.lat;
+      this._location.lon = loc_data.items[0].position.lng;
 
       this.getWeatherData(loc_data.items[0].position.lat, loc_data.items[0].position.lng);
 
@@ -350,8 +376,8 @@ class App extends Component {
                  state={location_state} 
                  title={location_title} 
                  searchCallback={this.searchCity.bind(this)} 
-                 getLocationCallback={this.getCurrentLocation.bind(this)}
-                 refreshCallback={this.getWeatherData.bind(this)}
+                 getLocationCallback={this.getWeatherAtCurrentLocation.bind(this)}
+                 refreshCallback={this.refreshWeatherData.bind(this)}
         />
         
         <View style={styles.currentContainer}>       
@@ -381,7 +407,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: "#a380c1",
+    backgroundColor: "#1c9eff",
     height: 100
   },
   textLocation: {
