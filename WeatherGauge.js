@@ -366,7 +366,7 @@ class WeatherGauge extends Component {
             // await imageAsset.downloadAsync();
             
             // console.log(imageAsset.localUri);
-            image.src = dataIcons["icon_" + this.props.data.today.icon];
+            image.src = dataIcons["icon_" + this.props.today.icon];
             
             image.addEventListener('load', () => {
                 let x = CANVAS_CENTER_X - (ICON_SIZE / 2);
@@ -648,12 +648,9 @@ class WeatherGauge extends Component {
                     ctx.beginPath();
                     ctx.arc(this.centerX, this.centerY, this.clockRadius, (i * hourTick) + startRad, (i * hourTick) + hourTick + startRad);
                     ctx.stroke();
-                
                 }
-            }
-            
+            } // end for
         }
-
     }
 
 
@@ -707,17 +704,14 @@ class WeatherGauge extends Component {
 
             this.draw12HourPrecip(this.ctx, this.props.hourly);            
             this.drawHourTicks(this.ctx);
-            this.drawMinuteTicks(this.ctx);
-
-            // this.drawMinuteTicks(this.ctx);
-            
+            this.drawMinuteTicks(this.ctx);            
             this.drawCurrentTimeMarker(this.ctx);
             this.draw12HourTemperatures(this.ctx, this.props.hourly);
-            
+
+            // functions that use data retrieved from the context object are async
             await this.drawTemperatureText(this.ctx);
             await this.drawTemperatureKey(this.ctx);
             await this.drawDescriptionText(this.ctx);
-            // this.drawTemperatureText(this.ctx);
             await this.drawHighlights(this.ctx);
 
             this.drawCenterIcon(this.ctx);
@@ -726,8 +720,6 @@ class WeatherGauge extends Component {
             console.log("ERROR: Error trying to draw gauge");
             console.error(e);
         }
-        
-
     }
 
 
