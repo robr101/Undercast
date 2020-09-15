@@ -257,7 +257,8 @@ class App extends Component {
     });
 
     if (!weatherJson.minutely) {
-      console.log("No minutely data in weatherJson");
+      console.error("No minutely data in weatherJson");
+      return;
     }
 
     weatherJson.minutely.forEach(minute => minute.date = new Date(minute.dt * 1000));
@@ -348,6 +349,7 @@ class App extends Component {
       minutely: this.state.minutely,
       today: {
         currentTemp: this.state.currentWeather.temp,
+        desc: this.state.currentWeather.desc,
         high: this.state.daily[0].max_temp,
         low: this.state.daily[0].min_temp,
         pop: this.state.daily[0].pop,
@@ -359,7 +361,7 @@ class App extends Component {
       }
     }
 
-    let location_title = 'not sure where ya are';
+    let location_title = 'Somewhereville';
     let location_city = 'Anywhere';
     let location_state = 'USA';
 

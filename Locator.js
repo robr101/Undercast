@@ -87,12 +87,12 @@ const styles = StyleSheet.create({
         paddingLeft: 10,
         paddingRight: 10,
         fontSize: 18,
-        color: '#000',
+        color: '#fff',
         borderWidth: 2,
         borderRadius: 5,
         borderColor: '#eee',
         borderStyle: "solid",
-        backgroundColor: "#fff"
+        width: 200
     },
 
     buttonSearch: {
