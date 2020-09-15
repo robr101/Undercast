@@ -212,13 +212,22 @@ class App extends Component {
     // use the mock data instead of api results
     // weatherJson = mock_weather_data;
     let current = weatherJson.current;
-    var daily = [];
-    var hourly = [];
-    var nextHourPop = [];
-
+    let daily = [];
+    let hourly = [];
+    let minutely = [];
 
     if (!weatherJson.daily) {
       console.error("No daily data in weatherJson");
+      return;
+    }
+
+    if (!weatherJson.hourly) {
+      console.error("No hourly weather data in weatherJson");
+      return;
+    }
+
+    if (!weatherJson.minutely) {
+      console.error("No minutely data in weatherJson");
       return;
     }
 
@@ -236,27 +245,53 @@ class App extends Component {
         humidity: day.humidity,
         dew_point: day.dew_point,
         clouds: day.clouds,
-
+        // more data is available in the openweathermap API, but this is all that's currently in use
       });
       
     });
 
-    if (!weatherJson.hourly) {
-      console.error("No hourly weather data in weatherJson");
-      return;
-    }
+
 
     weatherJson.hourly.forEach((hour) => {
-      hour.date = new Date(hour.dt * 1000);
-      hour.temp = Math.round(Utils.KtoF(hour.temp));
+      hourly.push({
+        date: new Date(hour.dt * 1000),
+        temp: Math.round(Utils.KtoF(hour.temp)),
+        dt: hour.dt,
+        feels_like: hour.feels_like,
+        pressure: hour.pressure,
+        humidity: hour.humidity,
+        dew_point: hour.dew_point,
+        clouds: hour.clouds,
+        visibility: hour.visibility,
+        wind_speed: hour.wind_speed,
+        wind_gust: hour.wind_gust,
+        wind_deg: hour.wind_deg,
+        pop: hour.pop,
+        rain: hour.rain, // might be null
+        snow: hour.snow, // might be null
+        weather: {
+          id: hour.weather.id,
+          main: hour.weather.main,
+          description: hour.weather.description,
+          icon: hour.weather.icon
+        }
+      });
+      
+      
+
     });
 
-    if (!weatherJson.minutely) {
-      console.error("No minutely data in weatherJson");
-      return;
-    }
 
-    weatherJson.minutely.forEach(minute => minute.date = new Date(minute.dt * 1000));
+
+    weatherJson.minutely.forEach((minute) => {
+      minutely.push({
+        date: new Date(minute.dt * 1000),
+        dt: minute.dt,
+        precipitation: minute.precipitation
+      });
+      
+
+    });
 
     console.log('INFO: -- App -- trying to set app state...');
 
@@ -271,7 +306,7 @@ class App extends Component {
 
       },
       daily: daily,
-      hourly: weatherJson.hourly,
+      hourly: hourly,
       minutely: weatherJson.minutely
     }, () => {console.log("INFO: -- App -- app state set successfully.")});
     
