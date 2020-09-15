@@ -456,14 +456,15 @@ class WeatherGauge extends Component {
         var hourTick = this.fullCircle / 12;
         var minuteTick = hourTick / 60;
         var startRad = 0;
+        let now = new Date(Date.now());
+        let currentMinute = now.getMinutes();
 
         // use only the next 12 hours
         hourlyData = hourlyData.slice(0, 12);
 
         if (hourlyData[0].date) {
             var startHour = hourlyData[0].date.getHours() % 12;
-            var startMinute = hourlyData[0].date.getMinutes();
-            startRad = this.clockTop + (startHour * hourTick) + (startMinute * minuteTick);
+            startRad = this.clockTop + (startHour * hourTick) + (currentMinute * minuteTick);
 
             // get the highest and lowest temps for the next 12 hours
             hourlyData.forEach((hour) => {
@@ -626,10 +627,11 @@ class WeatherGauge extends Component {
         var hourTick = this.fullCircle / 12;
         var minuteTick = hourTick / 60;
         var startRad = 0;
+        let now = new Date(Date.now());
+        let startMinute = now.getMinutes();
 
         if (hourlyData[0].date) {
             var startHour = hourlyData[0].date.getHours() % 12;
-            var startMinute = hourlyData[0].date.getMinutes();
             startRad = this.clockTop + (startHour * hourTick) + (startMinute * minuteTick);
             
             hourlyData = hourlyData.slice(0, 12);
@@ -656,11 +658,11 @@ class WeatherGauge extends Component {
 
 
     /**
-     * draw a little mark where the current time is on the next-12-hours gauge
-     * 
+     * mark the current time with a gold thingie, and fade the clock one hour before that
+     *  
      * @param {CanvasDrawingContext2D} ctx 
      */
-    drawCurrentTimeMarker = async (ctx) => {
+    async drawCurrentTimeMarker (ctx) {
 
         try {
             var goldGrad = await ctx.createRadialGradient(this.centerX, this.centerY, this.clockRadius - (this.clockThickness * 0.75), this.centerX, this.centerY, this.clockRadius + (this.clockThickness * 0.75));
@@ -672,15 +674,29 @@ class WeatherGauge extends Component {
             console.error(e);
         }
 
-        var now = new Date(Date.now());
-        var thisHour = now.getHours();
-        var thisMinute = now.getMinutes();
+        let now = new Date(Date.now());
+        let thisHour = now.getHours();
+        let thisMinute = now.getMinutes();
 
-        var hourTick = this.fullCircle / 12;
-        var minuteTick = hourTick / 60;
+        let hourTick = this.fullCircle / 12;
+        let minuteTick = hourTick / 60;
         
-        var clockTop = this.fullCircle * 0.75;
-        var startRad = clockTop + ((thisHour % 12) * hourTick) + (thisMinute * minuteTick);
+        let clockTop = this.fullCircle * 0.75;
+
+        // fade the circle before current time
+        let prevHour = thisHour - 1;
+        let fadeStart = clockTop + ((prevHour % 12) * hourTick) + (thisMinute * minuteTick);
+        for (let i = 0; i < 60; i++) {
+            let opacity = Utils.mapRange(i, 0, 60, 0, 1);
+            ctx.strokeStyle = `rgba(28, 158, 255, ${opacity * 2})`;
+            ctx.lineWidth = this.clockThickness;
+            ctx.beginPath();
+            ctx.arc(this.centerX, this.centerY, this.clockRadius, fadeStart + (i * minuteTick), fadeStart + (i * minuteTick) + minuteTick);
+            ctx.stroke();
+        }
+
+        // draw the gold marker
+        let startRad = clockTop + ((thisHour % 12) * hourTick) + (thisMinute * minuteTick);
 
         ctx.strokeStyle = goldGrad;
         ctx.lineWidth = this.clockThickness * 1.5;
@@ -705,15 +721,16 @@ class WeatherGauge extends Component {
             this.draw12HourPrecip(this.ctx, this.props.hourly);            
             this.drawHourTicks(this.ctx);
             this.drawMinuteTicks(this.ctx);            
-            this.drawCurrentTimeMarker(this.ctx);
+            
             this.draw12HourTemperatures(this.ctx, this.props.hourly);
-
+            
             // functions that use data retrieved from the context object are async
             await this.drawTemperatureText(this.ctx);
             await this.drawTemperatureKey(this.ctx);
             await this.drawDescriptionText(this.ctx);
             await this.drawHighlights(this.ctx);
-
+            
+            this.drawCurrentTimeMarker(this.ctx);
             this.drawCenterIcon(this.ctx);
 
         } catch (e) {
