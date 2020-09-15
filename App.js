@@ -247,7 +247,6 @@ class App extends Component {
         clouds: day.clouds,
         // more data is available in the openweathermap API, but this is all that's currently in use
       });
-      
     });
 
 
@@ -276,12 +275,7 @@ class App extends Component {
           icon: hour.weather.icon
         }
       });
-      
-      
-
     });
-
-
 
     weatherJson.minutely.forEach((minute) => {
       minutely.push({
@@ -294,8 +288,6 @@ class App extends Component {
     });
 
     console.log('INFO: -- App -- trying to set app state...');
-
-
     this.setState({
       location: location,
       currentWeather: {
@@ -303,6 +295,8 @@ class App extends Component {
         temp: Math.round(Utils.KtoF(current.temp)),
         desc: current.weather[0].description,
         icon: current.weather[0].icon,
+        high: daily[0].max_temp,
+        low: daily[0].min_temp
 
       },
       daily: daily,

@@ -144,24 +144,6 @@ class WeatherGauge extends Component {
     }
 
 
-
-    /**
-     * called after componentDidUpdate with new props, starts the drawing process
-     */
-    async fillStateFromProps () {
-        if (!this._isMounted) {
-            console.log("WARN: -- WeatherGauge -- component not mounted, can't init gauge");
-            return;
-        }
-        console.log("INFO: -- WeatherGauge -- setting state in WeatherGauage: fillStateFromProps");
-        this.setState({
-            hourly: this.props.hourly,
-            minutely: this.props.minutely,
-            today: this.props.data.today
-        });
-    }
-
-
     /**
      * takes in one hourly data point and checks to see if it's going to rain, snow, or be cloudy
      * and then returns an rgba value
@@ -288,10 +270,9 @@ class WeatherGauge extends Component {
             console.log("couldn't create clock gradient for background circles");
             console.error(error);
         }
-
-
-
     }
+
+
 
     drawMinuteBackgroundCircle (ctx) {
         var startRad = 0;
@@ -330,6 +311,7 @@ class WeatherGauge extends Component {
         ctx.arc(this.centerX, this.centerY, this.clockRadius, 0, this.fullCircle);
         ctx.stroke();
     }
+
 
 
     /**
@@ -400,9 +382,9 @@ class WeatherGauge extends Component {
         } catch (e) {
             console.error(e);
         }
-
-        
     }
+
+
 
     /**
      * draw tick marks around the next-60-minute gauge
@@ -517,8 +499,7 @@ class WeatherGauge extends Component {
      */
     async drawTemperatureText (ctx) {
         
-        let tempString = this.state.today.currentTemp + '°';
-
+        let tempString = this.props.today.temp + '°';
 
         try {
             // set the font here so the measurements come out correctly
@@ -557,7 +538,7 @@ class WeatherGauge extends Component {
      */
     async drawDescriptionText (ctx) {
         try {
-            let descriptionText = this.state.today.desc.toUpperCase();
+            let descriptionText = this.props.today.desc.toUpperCase();
             let textMeasure = await ctx.measureText(descriptionText);
             let desc_width = textMeasure.width;
 
@@ -603,8 +584,8 @@ class WeatherGauge extends Component {
             ctx.stroke();
             ctx.fillStyle = '#000';
 
-            let highString = 'H: ' + String(this.todayHighTemp) + '°';
-            let lowString = 'L: ' + String(this.todayLowTemp) + '°';
+            let highString = 'H: ' + String(this.props.today.high) + '°';
+            let lowString = 'L: ' + String(this.props.today.low) + '°';
 
             let high_temp_x = TEMP_KEY_X + (TEMP_KEY_WIDTH * 2) + HORIZONTAL_PADDING;
             let high_temp_y = TEMP_KEY_Y + FONT_SIZE_HL_TEMP + VERTICAL_PADDING;
@@ -689,9 +670,11 @@ class WeatherGauge extends Component {
             goldGrad.addColorStop(0, 'rgb(209, 164, 40)');
             goldGrad.addColorStop(0.5, 'rgb(255, 235, 82)');
             goldGrad.addColorStop(0, 'rgb(209, 164, 40)');
+
         } catch (e) {
             console.error(e);
         }
+
         var now = new Date(Date.now());
         var thisHour = now.getHours();
         var thisMinute = now.getMinutes();
@@ -718,19 +701,18 @@ class WeatherGauge extends Component {
         try {
             this.ctx.clearRect(0, 0, this.deviceWidth, this.deviceWidth);
             await this.drawCircleBackground(this.ctx);
-            await this.drawBackgroundCircles(this.ctx, this.state.hourly);
+            await this.drawBackgroundCircles(this.ctx, this.props.hourly);
             
             this.drawClockLabels(this.ctx);
-            // this.drawNextHourPrecip(this.ctx, this.state.minutely);
 
-            this.draw12HourPrecip(this.ctx, this.state.hourly);            
+            this.draw12HourPrecip(this.ctx, this.props.hourly);            
             this.drawHourTicks(this.ctx);
             this.drawMinuteTicks(this.ctx);
 
             // this.drawMinuteTicks(this.ctx);
             
             this.drawCurrentTimeMarker(this.ctx);
-            this.draw12HourTemperatures(this.ctx, this.state.hourly);
+            this.draw12HourTemperatures(this.ctx, this.props.hourly);
             
             await this.drawTemperatureText(this.ctx);
             await this.drawTemperatureKey(this.ctx);
@@ -755,19 +737,17 @@ class WeatherGauge extends Component {
      * 
      */
     async initCanvas () {
-        
         try {
             this.canvas.height = this.deviceWidth * 0.95;
             this.canvas.width = this.deviceWidth * 0.95;
             this.ctx = await this.canvas.getContext('2d');
 
-            
         } catch (err) {
             console.error(err);
         }
         
     }
-    
+
 
 
     /**
@@ -777,7 +757,6 @@ class WeatherGauge extends Component {
         // once the component is mounted we should be able to draw the canvas
         console.log("INFO: -- WeatherGauge -- componentDidMount");
         await this.initCanvas();
-        this.fillStateFromProps();
         this.drawingOrchestrator();
     }
 
@@ -799,11 +778,6 @@ class WeatherGauge extends Component {
      */
     componentDidUpdate(prevProps, prevState) {
         console.log("INFO: -- WeatherGauge -- componentDidUpdate");
-        // console.log("Object: nextProps.data.hourly[0]:");
-        // console.log(nextProps.data.hourly[0]);
-        // console.log("Object: this.state.hourly[0]:");
-        // console.log(this.state.hourly[0]);
-
         this.drawingOrchestrator();
             
     }
