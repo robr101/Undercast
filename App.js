@@ -83,11 +83,9 @@ class App extends Component {
       this.state.userPreferences.savedLocations = JSON.parse(saved);
       this.state.userPreferences.measurementSystem = JSON.parse(ms);
 
-      console.log("INFO getUserPreferences: ");
-      console.log(this.userPreferences);
     } catch (e)
     {
-      console.log("Couldn't load user preferences:");
+      console.error("Couldn't load user preferences:");
       console.error(e);
     }
   }
@@ -121,7 +119,7 @@ class App extends Component {
 
 
 
-  getWeatherData = async (lat, lon) => {
+  async getWeatherData (lat, lon) {
 
     try {
 
@@ -145,18 +143,18 @@ class App extends Component {
   }
 
 
-  refreshWeatherData = () => {
+  refreshWeatherData () {
     this.getWeatherData(this._location.lat, this._location.lon);
   }
 
 
 
-  getWeatherAtCurrentLocation = async () => {
+  async getWeatherAtCurrentLocation () {
     try {
       const coords = await this.getCurrentLocation();
       this.getWeatherData(coords.latitude, coords.longitude);
     }  catch (e) {
-      console.log("Couldn't get weather at current location.");
+      console.error("Couldn't get weather at current location.");
       console.error(e);
     }
   }
@@ -165,7 +163,7 @@ class App extends Component {
    * 
    * NOTE: 
    */
-  saveLocation = async (location) => {
+  async saveLocation (location) {
     
     // NOTE: TODO: SOMEHTING
     var locs = this.state.userPreferences.savedLocations;
@@ -181,7 +179,7 @@ class App extends Component {
 
 
 
-  getCurrentLocation = async () => {
+  async getCurrentLocation () {
     try {
 
       let {status} = await Location.requestPermissionsAsync();
@@ -192,9 +190,6 @@ class App extends Component {
       }
       
       const location = await Location.getCurrentPositionAsync({});
-      console.log(location);
-      console.log(location.coords);
-
       this._location.lat = location.coords.latitude;
       this._location.lon = location.coords.longitude;
 
@@ -213,7 +208,7 @@ class App extends Component {
    * @param {JSON} weatherJson : json data from openweathermap.org one-call api 
    * @return NONE
    */
-  fillWeatherState = (weatherJson, location) => {
+  fillWeatherState (weatherJson, location) {
     // use the mock data instead of api results
     // weatherJson = mock_weather_data;
     let current = weatherJson.current;
@@ -263,23 +258,23 @@ class App extends Component {
 
     weatherJson.minutely.forEach(minute => minute.date = new Date(minute.dt * 1000));
 
-    console.log('trying to set app state...');
+    console.log('INFO: -- App -- trying to set app state...');
 
-    if (this._isMounted) {
-      this.setState({
-        location: location,
-        currentWeather: {
-          cloudCover: current.clouds,
-          temp: Math.round(Utils.KtoF(current.temp)),
-          desc: current.weather[0].description,
-          icon: current.weather[0].icon,
 
-        },
-        daily: daily,
-        hourly: weatherJson.hourly,
-        minutely: weatherJson.minutely
-      });
-    }
+    this.setState({
+      location: location,
+      currentWeather: {
+        cloudCover: current.clouds,
+        temp: Math.round(Utils.KtoF(current.temp)),
+        desc: current.weather[0].description,
+        icon: current.weather[0].icon,
+
+      },
+      daily: daily,
+      hourly: weatherJson.hourly,
+      minutely: weatherJson.minutely
+    }, () => {console.log("INFO: -- App -- app state set successfully.")});
+    
     
   }
 
@@ -295,8 +290,6 @@ class App extends Component {
     this._isMounted = true;
 
     try {
-      // let userPrefs = await this.getUserPreferences();
-      // console.log(userPrefs);
       const coords = await this.getCurrentLocation();
       
       this.getWeatherData(coords.latitude, coords.longitude);
@@ -324,8 +317,6 @@ class App extends Component {
       const loc_data = await res.json();
 
       // tell the user if their search ended with no results, then exit
-      console.log("=================== loc_data.items: ==================");
-      console.log(loc_data.items);
       if (loc_data.items.length === 0) {
         alert(`No results for "${searchText}", try a different search`);
         return;
@@ -337,7 +328,7 @@ class App extends Component {
       this.getWeatherData(loc_data.items[0].position.lat, loc_data.items[0].position.lng);
 
     } catch (e) {
-      console.log("Error searching text from here api:");
+      console.error("Error searching text from here api:");
       console.error(e);
     }
   }
@@ -383,7 +374,11 @@ class App extends Component {
         />
         
         <View style={styles.currentContainer}>       
-          <WeatherGauge data={gaugeData}/>
+          <WeatherGauge data={gaugeData}
+                        hourly={this.state.hourly}
+                        minutely={this.state.minutely}
+                        today={this.state.currentWeather}
+                        />
         </View>
 
         <ScrollView style={styles.daysContainer} horizontal={true} showsHorizontalScrollIndicator={false} decelerationRate="fast">
