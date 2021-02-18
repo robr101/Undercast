@@ -22,10 +22,13 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "android": {
+      "package": "dev.robrussell.undercast"
     }
   },
   "android": {
-    "package": "com.robrussell.undercast"
+    "package": "dev.robrussell.undercast"
   },
   "androidStatusBar": {
     "statusBarHidden": true

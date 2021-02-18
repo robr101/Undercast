@@ -7,6 +7,7 @@ import { Utils } from './Utils';
 
 export default class Locator extends Component {
 
+
     constructor (props) {
         super(props);
         this.textInput = React.createRef();
@@ -16,26 +17,59 @@ export default class Locator extends Component {
         editing: false,
     }
 
+
+
+    /**
+     *  Focus on TextInput when we're in edit mode
+     * 
+     * @param {props} prevProps 
+     * @param {state} prevState 
+     * @param {*} snapshot 
+     */
     componentDidUpdate(prevProps, prevState, snapshot) {
         if (this.state.editing) {
             this.textInput.current.focus();
         }
     }
 
+
+    /**
+     * When a user presses the search bar, change the state to editing so we can focus on the textinput
+     * 
+     * @param {event} event : the event object for pressing the location button
+     */
     handleSearchPress = (event) => {
         this.setState({
             editing: true,
         });
     }
 
+
+    /**
+     *  Fire's the getLocationCallback from App.js to get weather data for phone's GPS location
+     * 
+     * @param {event} event : onPress from "current location" TouchableOpacity
+     */
     handleLocatorPress = (event) => {
         this.props.getLocationCallback();
     }
 
+
+
+    /**
+     * Fire's the refreshCallback from App.js to refresh the current location's weather data
+     * 
+     * @param {event} event : onPress from "refresh" TouchableOpacity
+     */
     handleRefreshPress = (event) => {
         this.props.refreshCallback();
     }
 
+
+    /**
+     * 
+     * @param {event} event : onBlur event object on the TextInput
+     */
     _onSubmitEdit = (event) => {
         this.props.searchCallback(event);
         this.setState({editing: false});

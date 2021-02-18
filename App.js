@@ -13,16 +13,15 @@ import WeatherGauge from './WeatherGauge';
 import Locator from './Locator';
 import keyStore from './KeyStorage';
 
-
 const KEY_USER_HOME_LOCATION = '@user-home';
 const KEY_SAVED_LOCATIONS = '@user-locations';
 const KEY_MEASUREMENT_SYS = '@user-measurements';
 
-const URL_SEARCH_CITY = 'https://undercast.robrussell.dev/api/search-city';
-const URL_LOCATION_DETAILS = 'https://undercast.robrussell.dev/api/location-details';
-const URL_WEATHER_DATA = 'https://undercast.robrussell.dev/api/weather-data';
+// const URL_SEARCH_CITY = `https://geocode.search.hereapi.com/v1/geocode?q=${searchText}&apiKey=${here_api_key}`;
+// const URL_LOCATION_DETAILS = `https://revgeocode.search.hereapi.com/v1/revgeocode?at=${lat}%2C${lon}&lang=en-US&apiKey=${here_api_key}`;
+// const URL_WEATHER_DATA = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=${owm_api_key}`;
 
-Logs.enableExpoCliLogging();
+Logs.disableExpoCliLogging();
 
 
 class App extends Component {
@@ -37,6 +36,7 @@ class App extends Component {
   }
 
 
+  // fill in some default values in the App's state object so we don't get errors when trying to render at startup
   state = {
     userPreferences: {
       homeLocation: {
@@ -72,7 +72,12 @@ class App extends Component {
   };
 
 
-
+  /**
+   * 
+   * loads user preferences into the App's state object from KeyStore
+   * 
+   * @return NONE
+   */
   async getUserPreferences () {
     try {
       var homeLoc = await keyStore.get(KEY_USER_HOME_LOCATION);
@@ -91,7 +96,12 @@ class App extends Component {
   }
 
 
-
+    /**
+   * 
+   * save user preferences in KeyStore
+   * 
+   * @return true if complete
+   */
   async saveAllUserPreferences () {
     await keyStore.store(KEY_USER_HOME_LOCATION, JSON.stringify(this.state.userPreferences.homeLocation));
     await keyStore.store(KEY_SAVED_LOCATIONS, JSON.stringify(this.state.userPreferences.savedLocations));
@@ -102,10 +112,17 @@ class App extends Component {
 
 
 
+    /**
+   * 
+   *  use HERE.com's reverse geocode api to get location info like city name and state
+   * 
+   * @param {float} lat: latitude of the location to fetch weather data for
+   * @param {float} lon: longitude of the location to fetch weather data for
+   * @return {JSON} locationDetails: JSON object of the location data retreived
+   */
   async getLocationDetails (lat, lon) {
-      var here_reverse_url = `https://revgeocode.search.hereapi.com/v1/revgeocode?at=${lat}%2C${lon}&lang=en-US&apiKey=${here_api_key}`;
       try {
-        const locationRes = await fetch(here_reverse_url);
+        const locationRes = await fetch(`https://revgeocode.search.hereapi.com/v1/revgeocode?at=${lat}%2C${lon}&lang=en-US&apiKey=${here_api_key}`);
         const locationData = await locationRes.json();
     
         return locationRes;
@@ -119,18 +136,22 @@ class App extends Component {
 
 
 
+  
+  /**
+   * 
+   *  get the weather data from OpenWeatherMap api and fill the app state when it returns
+   * 
+   * @param {float} lat: latitude of the location to fetch weather data for
+   * @param {float} lon: longitude of the location to fetch weather data for
+   * @return NONE
+   */
   async getWeatherData (lat, lon) {
 
-    try {
-
-      var here_reverse_url = `https://revgeocode.search.hereapi.com/v1/revgeocode?at=${lat}%2C${lon}&lang=en-US&apiKey=${here_api_key}`;
-
-      var weatherUrl = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=${owm_api_key}`;
-      
-      const locationRes = await fetch(here_reverse_url);
+    try {      
+      const locationRes = await fetch(`https://revgeocode.search.hereapi.com/v1/revgeocode?at=${lat}%2C${lon}&lang=en-US&apiKey=${here_api_key}`);
       const locationData = await locationRes.json();
 
-      const weatherRes = await fetch(weatherUrl);
+      const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=${owm_api_key}`);
       const weatherData = await weatherRes.json(); // res is a stream so wait for it to finish before trying to fill the state
 
       this.fillWeatherState(weatherData, locationData);
@@ -143,12 +164,25 @@ class App extends Component {
   }
 
 
+
+    /**
+   * 
+   *  handle calls from Locator.js to refresh the app by calling getWeatherData with the current location data
+   * 
+   * @return NONE
+   */
   refreshWeatherData () {
     this.getWeatherData(this._location.lat, this._location.lon);
   }
 
 
 
+    /**
+   * 
+   *  Use the phone's GPS location to get weather data
+   * 
+   * @return NONE
+   */
   async getWeatherAtCurrentLocation () {
     try {
       const coords = await this.getCurrentLocation();
@@ -159,33 +193,20 @@ class App extends Component {
     }
   }
 
-  /**
+
+    /**
    * 
-   * NOTE: 
+   *  get the phone's GPS location (requires location permissions)
+   * 
+   * @return {obj}: an object that stores latitude and longitude obj: {latitude: float, longitude: float}
    */
-  async saveLocation (location) {
-    
-    // NOTE: TODO: SOMEHTING
-    var locs = this.state.userPreferences.savedLocations;
-    locs.push(location);
-    this.setState({ userPreferences: { savedLocations: [ locs ] }});
-    try {
-      await keyStore.store(KEY_SAVED_LOCATIONS, JSON.stringify(this.state.userPreferences.savedLocations));
-    } catch (e) {
-      console.error("Couldn't save user location");
-      console.error(e);
-    }
-  }
-
-
-
   async getCurrentLocation () {
     try {
 
       let {status} = await Location.requestPermissionsAsync();
       
       if (status !== 'granted') {
-        alert("Need your permission to get your current location!");
+        alert("Undercast needs location permissions in order to provide relevant weather information.");
         return;
       }
       
@@ -200,6 +221,8 @@ class App extends Component {
       console.error(e);
     }
   }
+
+
 
   /**
    * 
@@ -217,17 +240,17 @@ class App extends Component {
     let minutely = [];
 
     if (!weatherJson.daily) {
-      console.error("No daily data in weatherJson");
+      console.error("Undercast ran into an error retrieving data about daily weather.");
       return;
     }
 
     if (!weatherJson.hourly) {
-      console.error("No hourly weather data in weatherJson");
+      console.error("Undercast ran into an error retrieving data about hourly weather.");
       return;
     }
 
     if (!weatherJson.minutely) {
-      console.error("No minutely data in weatherJson");
+      console.error("Undercast ran into an error retrieving data about current weather.");
       return;
     }
 
@@ -309,12 +332,17 @@ class App extends Component {
 
 
 
+  /**
+   * trying to draw on an unmounted object causes errors
+   */
   componentWillUnmount = () => {
     this._isMounted = false;
   }
 
 
-
+    /**
+   * once the app mounts we can start drawing on the canvas
+   */
   componentDidMount = async () => {
     this._isMounted = true;
 
@@ -331,6 +359,15 @@ class App extends Component {
   }
 
 
+
+    /**
+   * 
+   * searchCity calls HERE.com's geocode API to get location data about a searched city.  it chooses the first (best match) result and
+   * then calls getWeatherData() with the new location information to refresh the animations
+   * 
+   * @param {event} event : onSubmitEdit event object from Locator.js
+   * @return NONE
+   */
   async searchCity (event) {
     try {
       
@@ -357,12 +394,17 @@ class App extends Component {
       this.getWeatherData(loc_data.items[0].position.lat, loc_data.items[0].position.lng);
 
     } catch (e) {
-      console.error("Error searching text from here api:");
+      console.error("Error searching text from HERE.com api:");
       console.error(e);
     }
   }
 
-
+    /**
+   * 
+   *  Render all the app components
+   * 
+   * @return NONE
+   */
   render() {
     let gaugeData = {
       hourly: this.state.hourly,
@@ -424,7 +466,6 @@ class App extends Component {
     )
   }
 }
-
 
 
 
