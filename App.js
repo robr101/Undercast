@@ -35,7 +35,6 @@ class App extends Component {
     lon: 0
   }
 
-
   // fill in some default values in the App's state object so we don't get errors when trying to render at startup
   state = {
     userPreferences: {
@@ -70,6 +69,7 @@ class App extends Component {
     rainSoon: 0,
 
   };
+
 
 
   /**
@@ -239,19 +239,40 @@ class App extends Component {
     let hourly = [];
     let minutely = [];
 
+    // there should always be data for the next 7 days
     if (!weatherJson.daily) {
       console.error("Undercast ran into an error retrieving data about daily weather.");
       return;
     }
 
+    // there should always be data for the next 48 hours
     if (!weatherJson.hourly) {
       console.error("Undercast ran into an error retrieving data about hourly weather.");
       return;
     }
 
-    if (!weatherJson.minutely) {
-      console.error("Undercast ran into an error retrieving data about current weather.");
-      return;
+    // minutely is different, if there's no imminent precipitation the API won't return minutely data
+    // at all
+    if (weatherJson.minutely) {
+      weatherJson.minutely.forEach((minute) => {
+        minutely.push({
+          date: new Date(minute.dt * 1000),
+          dt: minute.dt,
+          precipitation: minute.precipitation
+        });
+      });
+    }
+    // if there's no minutely data, fill in the minutes with 0 values to show no precipitation
+    else {
+      for (var i = 0; i < 60; i++)
+      {
+        let dt = Date.now() + (i * 60 * 1000);
+        minutely.push({
+          date: new Date(dt), 
+          dt: dt + (i * 1000),
+          precipitation: 0
+        });
+      }
     }
 
     weatherJson.daily.forEach((day) => {
@@ -271,8 +292,6 @@ class App extends Component {
         // more data is available in the openweathermap API, but this is all that's currently in use
       });
     });
-
-
 
     weatherJson.hourly.forEach((hour) => {
       hourly.push({
@@ -300,17 +319,8 @@ class App extends Component {
       });
     });
 
-    weatherJson.minutely.forEach((minute) => {
-      minutely.push({
-        date: new Date(minute.dt * 1000),
-        dt: minute.dt,
-        precipitation: minute.precipitation
-      });
-      
-
-    });
-
     console.log('INFO: -- App -- trying to set app state...');
+    
     this.setState({
       location: location,
       currentWeather: {
@@ -325,8 +335,9 @@ class App extends Component {
       daily: daily,
       hourly: hourly,
       minutely: weatherJson.minutely
-    }, () => {console.log("INFO: -- App -- app state set successfully.")});
-    
+    },
+    // on success 
+    () => {console.log("INFO: -- App -- app state set successfully.")});
     
   }
 
@@ -354,8 +365,6 @@ class App extends Component {
     } catch (e) {
       console.error(e);
     }
-    
-    
   }
 
 
@@ -398,6 +407,8 @@ class App extends Component {
       console.error(e);
     }
   }
+
+
 
     /**
    * 

@@ -26,17 +26,25 @@ import icon_50d from './new_icons/50d.png';
 import icon_50n from './new_icons/50n.png';
 
 
+
 // scaled positional metrics
-const FULL_CIRCLE = Math.PI * 2;
 const DEVICE_WIDTH = Dimensions.get('window').width;
 const CANVAS_CENTER_X = DEVICE_WIDTH / 2;
 const CANVAS_CENTER_Y = DEVICE_WIDTH / 2;
 const DEVICE_SCALE = DEVICE_WIDTH / 500; // interface was designed with 500px wide device
-const NEXT_60_MIN_RAD = 175 * DEVICE_SCALE;   // next-60 gauge radius
-const NEXT_12_HOUR_RAD = 200 * DEVICE_SCALE;    // outside gauge radius
+const NEXT_60_MIN_RADIUS = 175 * DEVICE_SCALE;   // next-60 gauge radius
+const NEXT_12_HOUR_RADIUS = 200 * DEVICE_SCALE;    // outside gauge radius
+
+
+const FULL_CIRCLE = Math.PI * 2;
+const CLOCK_TOP = FULL_CIRCLE * 0.75;
 
 const HORIZONTAL_PADDING = 10 * DEVICE_SCALE;
 const VERTICAL_PADDING = 25 * DEVICE_SCALE;
+
+const CLOCK_THICKNESS = 25 * DEVICE_SCALE;
+const MINUTE_THICKNESS = 10 * DEVICE_SCALE;
+const TEMP_THICKNESS = 2 * DEVICE_SCALE;
 
 // fonts
 const FONT_SIZE_CURRENT_TEMP = 48;
@@ -103,35 +111,7 @@ class WeatherGauge extends Component {
     // default to fahrenheit, need to upgrade later for different units
     tempUnit = 'F';
 
-    // scaling and placement constants based on device width
-    deviceWidth = Dimensions.get('window').width;
-    centerX = this.deviceWidth / 2;
-    centerY = this.deviceWidth / 2;
-
-    // the emulated device used to design the interface is 500px wide
-    deviceScale = this.deviceWidth / 500;
-
-    // gauge sizes and thicknesses for each ring
-    minuteRadius = 175 * this.deviceScale;
-    clockRadius = 200 * this.deviceScale;
-
-    clockThickness = 25 * this.deviceScale;
-    minuteThickness = 10 * this.deviceScale;
-    tempThickness = 2 * this.deviceScale;
-
-    // text placement and sizes
-    
-    highLowX = this.centerX + 50;
-    highLowY = this.centerY;
-
-    currentTempX = this.centerX;
-    currentTempY = this.centerY;
-
     // detail x and y calculated by text length
-    
-    currentTempFontSize = 48;
-    highLowFontSize = 12;
-    detailSize = 10;
 
     todayHighTemp = -1000;
     todayLowTemp = 1000;
@@ -140,9 +120,6 @@ class WeatherGauge extends Component {
 
     // just a debug var to see if we're past first update
     init = true;
-
-    fullCircle = 2 * Math.PI;
-    clockTop = this.fullCircle * 0.75;
 
     state = {
         current: {temp: 0, date: null, dewpoint: 0, desc: null, precipitation: 0, clouds: 0, sunrise: 0, sunset: 0},
@@ -182,7 +159,6 @@ class WeatherGauge extends Component {
         let red = 0;
         let green = 0;
         let blue = 0;
-        let alpha = 0;
 
         // determine rain intensity
         if (hour.rain) {
@@ -258,16 +234,13 @@ class WeatherGauge extends Component {
      * @param {Object} hourlyData 
      */
     async drawBackgroundCircles (ctx, hourlyData) {
-        var hourTick = this.fullCircle / 12;
-        var minuteTick = hourTick / 60;
-        // var startRad = this.clockTop + (hourlyData[0].date.getHours() % 12) * hourTick;
 
         var startRad = 0;
 
         // create a gradient background for the precipitation gauge
         try {
             
-            var clockGrad = await ctx.createRadialGradient(this.centerX, this.centerY, this.clockRadius - (this.clockThickness / 2), this.centerX, this.centerY, this.clockRadius + (this.clockThickness / 2));
+            var clockGrad = await ctx.createRadialGradient(CANVAS_CENTER_X, CANVAS_CENTER_Y,NEXT_12_HOUR_RADIUS - (CLOCK_THICKNESS / 2), CANVAS_CENTER_X, CANVAS_CENTER_Y, NEXT_12_HOUR_RADIUS + (CLOCK_THICKNESS / 2));
 
             clockGrad.addColorStop(0, 'rgba(150, 150, 150, 0.6)');
     
@@ -279,9 +252,9 @@ class WeatherGauge extends Component {
             clockGrad.addColorStop(1, 'rgba(150, 150, 150, 0.6)');
 
             ctx.strokeStyle = clockGrad;
-            ctx.lineWidth = this.clockThickness;
+            ctx.lineWidth = CLOCK_THICKNESS;
             ctx.beginPath();
-            ctx.arc(this.centerX, this.centerY, this.clockRadius, startRad, this.fullCircle);
+            ctx.arc(CANVAS_CENTER_X, CANVAS_CENTER_Y, NEXT_12_HOUR_RADIUS, startRad, FULL_CIRCLE);
             console.log("after drawbackground circles");
             ctx.stroke();
 
@@ -293,13 +266,16 @@ class WeatherGauge extends Component {
 
 
 
+    /**
+     * draw the background of the gauge
+     * 
+     * @param {CanvasRenderingContext2D} ctx 
+     */
     drawMinuteBackgroundCircle (ctx) {
-        var startRad = 0;
-
-        ctx.lineWidth = this.minuteThickness;
+        ctx.lineWidth = MINUTE_THICKNESS;
         ctx.strokeStyle = '#aaa';
         ctx.beginPath();
-        ctx.arc(this.centerX, this.centerY, this.minuteRadius, 0, this.fullCircle);
+        ctx.arc(CANVAS_CENTER_X, CANVAS_CENTER_Y, NEXT_60_MIN_RADIUS, 0, FULL_CIRCLE);
         ctx.stroke();
     }
 
@@ -312,7 +288,7 @@ class WeatherGauge extends Component {
      */
     async drawHighlights (ctx) {
         try {
-            var highlightGrad = await ctx.createRadialGradient(this.centerX, this.centerY, this.clockRadius - (this.clockThickness / 2), this.centerX, this.centerY, this.clockRadius + (this.clockThickness / 2));
+            var highlightGrad = await ctx.createRadialGradient(CANVAS_CENTER_X, CANVAS_CENTER_Y, NEXT_12_HOUR_RADIUS - (CLOCK_THICKNESS / 2), CANVAS_CENTER_X, CANVAS_CENTER_Y, NEXT_12_HOUR_RADIUS + (CLOCK_THICKNESS / 2));
 
             highlightGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
             highlightGrad.addColorStop(0.1, 'rgba(0, 0, 0, 0)');
@@ -325,9 +301,9 @@ class WeatherGauge extends Component {
 
 
         ctx.strokeStyle = highlightGrad;
-        ctx.lineWidth = this.clockThickness;
+        ctx.lineWidth = CLOCK_THICKNESS;
         ctx.beginPath();
-        ctx.arc(this.centerX, this.centerY, this.clockRadius, 0, this.fullCircle);
+        ctx.arc(CANVAS_CENTER_X, CANVAS_CENTER_Y, NEXT_12_HOUR_RADIUS, 0, FULL_CIRCLE);
         ctx.stroke();
     }
 
@@ -344,15 +320,15 @@ class WeatherGauge extends Component {
         ctx.fillStyle = 'black';
 
         let x12 = CANVAS_CENTER_X - (FONT_SIZE_CLOCK_LABELS / 2);
-        let y12 = CANVAS_CENTER_Y - this.minuteRadius + (FONT_SIZE_CLOCK_LABELS / 2);
+        let y12 = CANVAS_CENTER_Y - NEXT_60_MIN_RADIUS + (FONT_SIZE_CLOCK_LABELS / 2);
 
-        let x3 = CANVAS_CENTER_X + this.minuteRadius - (FONT_SIZE_CLOCK_LABELS / 2);
+        let x3 = CANVAS_CENTER_X + NEXT_60_MIN_RADIUS - (FONT_SIZE_CLOCK_LABELS / 2);
         let y3 = CANVAS_CENTER_Y + (FONT_SIZE_CLOCK_LABELS / 2);
 
         let x6 = CANVAS_CENTER_X - (FONT_SIZE_CLOCK_LABELS / 2);
-        let y6 = CANVAS_CENTER_Y + this.minuteRadius ;
+        let y6 = CANVAS_CENTER_Y + NEXT_60_MIN_RADIUS ;
 
-        let x9 = CANVAS_CENTER_X - this.minuteRadius ;
+        let x9 = CANVAS_CENTER_X - NEXT_60_MIN_RADIUS ;
         let y9 = CANVAS_CENTER_Y + (FONT_SIZE_CLOCK_LABELS / 2);
 
         ctx.fillText('12', x12, y12);
@@ -362,19 +338,29 @@ class WeatherGauge extends Component {
     }
 
 
-
+    
+    /**
+     *  draw the first background circle
+     * 
+     * @param {CanvasRenderingContext2D} ctx 
+     */
     async drawCircleBackground (ctx) {
         var startRad = 0;
 
         ctx.beginPath();
-        ctx.lineWidth = this.clockThickness;
-        ctx.arc(this.centerX, this.centerY, this.clockRadius, startRad, this.fullCircle);
+        ctx.lineWidth = CLOCK_THICKNESS;
+        ctx.arc(CANVAS_CENTER_X, CANVAS_CENTER_Y, NEXT_12_HOUR_RADIUS, startRad, FULL_CIRCLE);
         ctx.strokeStyle = "#ffffff";
         ctx.stroke();
     }
 
 
 
+    /**
+     *  draw the matching image for the current day's weather in the center of gauge
+     * 
+     * @param {CanvasRenderingContext2D} ctx 
+     */
     async drawCenterIcon (ctx) {
         try {
             ctx.fillStyle = 'white';
@@ -387,7 +373,7 @@ class WeatherGauge extends Component {
             image.src = imageURI;
             image.addEventListener('load', () => {
                 let x = CANVAS_CENTER_X - (ICON_SIZE / 2);
-                let y = CANVAS_CENTER_Y - this.clockRadius;
+                let y = CANVAS_CENTER_Y - NEXT_12_HOUR_RADIUS;
                 ctx.drawImage(image, x, y, ICON_SIZE, ICON_SIZE);
             });
     
@@ -410,8 +396,8 @@ class WeatherGauge extends Component {
      * @param {canvas2dDrawingContext} ctx 
      */
     drawMinuteTicks (ctx) {
-        var tickR = this.clockRadius;
-        var minuteTick = this.fullCircle / 60;
+        var tickR = NEXT_12_HOUR_RADIUS;
+        var minuteTick = FULL_CIRCLE / 60;
             
         // draw clock tickmarks
         for (var i = 1; i <= 60; i++) {
@@ -420,13 +406,13 @@ class WeatherGauge extends Component {
                 ctx.lineWidth = 3;
                 ctx.strokeStyle = '#333';
                 ctx.beginPath();
-                ctx.arc(this.centerX, this.centerY, tickR, i * minuteTick - 0.005, i * minuteTick + 0.005);
+                ctx.arc(CANVAS_CENTER_X, CANVAS_CENTER_Y, tickR, i * minuteTick - 0.005, i * minuteTick + 0.005);
                 ctx.stroke();
             } else {
                 ctx.lineWidth = 3;
                 ctx.strokeStyle = '#444';
                 ctx.beginPath();
-                ctx.arc(this.centerX, this.centerY, tickR, i * minuteTick - 0.002, i * minuteTick + 0.002);
+                ctx.arc(CANVAS_CENTER_X, CANVAS_CENTER_Y, tickR, i * minuteTick - 0.002, i * minuteTick + 0.002);
                 ctx.stroke();
             }
         }
@@ -440,8 +426,8 @@ class WeatherGauge extends Component {
      * @param {canvs2dDrawingContext} ctx 
      */
     drawHourTicks (ctx) {
-        var tickR = this.clockRadius + (this.clockThickness / 2) - 2;
-        var hourTick = this.fullCircle / 12;
+        var tickR = NEXT_12_HOUR_RADIUS + (CLOCK_THICKNESS / 2) - 2;
+        var hourTick = FULL_CIRCLE / 12;
             
         // draw clock tickmarks
         for (var i = 1; i <= 12; i++) {
@@ -450,13 +436,13 @@ class WeatherGauge extends Component {
                 ctx.lineWidth = 3;
                 ctx.strokeStyle = '#333';
                 ctx.beginPath();
-                ctx.arc(this.centerX, this.centerY, tickR, i * hourTick - 0.03, i * hourTick + 0.03);
+                ctx.arc(CANVAS_CENTER_X, CANVAS_CENTER_Y, tickR, i * hourTick - 0.03, i * hourTick + 0.03);
                 ctx.stroke();
             } else {
                 ctx.lineWidth = 3;
                 ctx.strokeStyle = '#444';
                 ctx.beginPath();
-                ctx.arc(this.centerX, this.centerY, tickR, i * hourTick - 0.01, i * hourTick + 0.01);
+                ctx.arc(CANVAS_CENTER_X, CANVAS_CENTER_Y, tickR, i * hourTick - 0.01, i * hourTick + 0.01);
                 ctx.stroke();
             }
         }
@@ -471,7 +457,7 @@ class WeatherGauge extends Component {
      * @param {Object} hourlyData 
      */
     draw12HourTemperatures (ctx, hourlyData) {
-        var hourTick = this.fullCircle / 12;
+        var hourTick = FULL_CIRCLE / 12;
         var minuteTick = hourTick / 60;
         var startRad = 0;
         let now = new Date(Date.now());
@@ -482,7 +468,7 @@ class WeatherGauge extends Component {
 
         if (hourlyData[0].date) {
             var startHour = hourlyData[0].date.getHours() % 12;
-            startRad = this.clockTop + (startHour * hourTick) + (currentMinute * minuteTick);
+            startRad = CLOCK_TOP + (startHour * hourTick) + (currentMinute * minuteTick);
 
             // get the highest and lowest temps for the next 12 hours
             hourlyData.forEach((hour) => {
@@ -501,7 +487,7 @@ class WeatherGauge extends Component {
                 ctx.strokeStyle = 'rgb(' + (r * 255) + ', 119, 255)';
                 ctx.lineWidth = 5;
                 ctx.beginPath();
-                ctx.arc(this.centerX, this.centerY, this.clockRadius - this.clockThickness / 2, (i * hourTick) + startRad, (i * hourTick) + hourTick + startRad);
+                ctx.arc(CANVAS_CENTER_X, CANVAS_CENTER_Y, NEXT_12_HOUR_RADIUS - CLOCK_THICKNESS / 2, (i * hourTick) + startRad, (i * hourTick) + hourTick + startRad);
                 ctx.stroke();
             }
         }
@@ -512,7 +498,7 @@ class WeatherGauge extends Component {
     /**
      * draw the current temperature in the center of the gauge
      * 
-     * this method is async because it calls ctx.measureText and all 2d context calls are async
+     * this method is async because it calls ctx.measureText and all 2d context calls are async w/react-native-canvas
      * 
      * @param {*} ctx 
      */
@@ -642,7 +628,7 @@ class WeatherGauge extends Component {
      */
     draw12HourPrecip (ctx, hourlyData) {
 
-        var hourTick = this.fullCircle / 12;
+        var hourTick = FULL_CIRCLE / 12;
         var minuteTick = hourTick / 60;
         var startRad = 0;
         let now = new Date(Date.now());
@@ -650,23 +636,21 @@ class WeatherGauge extends Component {
 
         if (hourlyData[0].date) {
             var startHour = hourlyData[0].date.getHours() % 12;
-            startRad = this.clockTop + (startHour * hourTick) + (startMinute * minuteTick);
+            startRad = CLOCK_TOP + (startHour * hourTick) + (startMinute * minuteTick);
             
             hourlyData = hourlyData.slice(0, 12);
 
             for (var i = 0; i < 11; i++) {
                 var hour = hourlyData[i];
-                var nextHour = hourlyData[i+1];
-                var prevHour = hourlyData[i-1];
 
                 // only draw precip bars if the PoP is over 20%
                 if (hour.pop > MIN_PRECIP) {
 
-                    ctx.lineWidth = this.clockThickness;
+                    ctx.lineWidth = CLOCK_THICKNESS;
                     let color = this.calcStrokeColor(hour);
                     ctx.strokeStyle = color;
                     ctx.beginPath();
-                    ctx.arc(this.centerX, this.centerY, this.clockRadius, (i * hourTick) + startRad, (i * hourTick) + hourTick + startRad);
+                    ctx.arc(CANVAS_CENTER_X, CANVAS_CENTER_Y, NEXT_12_HOUR_RADIUS, (i * hourTick) + startRad, (i * hourTick) + hourTick + startRad);
                     ctx.stroke();
                 }
             } // end for
@@ -683,7 +667,7 @@ class WeatherGauge extends Component {
     async drawCurrentTimeMarker (ctx) {
 
         try {
-            var goldGrad = await ctx.createRadialGradient(this.centerX, this.centerY, this.clockRadius - (this.clockThickness * 0.75), this.centerX, this.centerY, this.clockRadius + (this.clockThickness * 0.75));
+            var goldGrad = await ctx.createRadialGradient(CANVAS_CENTER_X, CANVAS_CENTER_Y, NEXT_12_HOUR_RADIUS - (CLOCK_THICKNESS * 0.75), CANVAS_CENTER_X, CANVAS_CENTER_Y, NEXT_12_HOUR_RADIUS + (CLOCK_THICKNESS * 0.75));
             goldGrad.addColorStop(0, 'rgb(209, 164, 40)');
             goldGrad.addColorStop(0.5, 'rgb(255, 235, 82)');
             goldGrad.addColorStop(0, 'rgb(209, 164, 40)');
@@ -696,20 +680,20 @@ class WeatherGauge extends Component {
         let thisHour = now.getHours();
         let thisMinute = now.getMinutes();
 
-        let hourTick = this.fullCircle / 12;
+        let hourTick = FULL_CIRCLE / 12;
         let minuteTick = hourTick / 60;
         
-        let clockTop = this.fullCircle * 0.75;
+        let clockTop = FULL_CIRCLE * 0.75;
 
-        // fade the circle before current time
+        // fade the circle before current time 
         let prevHour = thisHour - 1;
         let fadeStart = clockTop + ((prevHour % 12) * hourTick) + (thisMinute * minuteTick);
         for (let i = 0; i < 60; i++) {
             let opacity = Utils.mapRange(i, 0, 60, 0, 1);
             ctx.strokeStyle = `rgba(28, 158, 255, ${opacity * 2})`;
-            ctx.lineWidth = this.clockThickness;
+            ctx.lineWidth = CLOCK_THICKNESS;
             ctx.beginPath();
-            ctx.arc(this.centerX, this.centerY, this.clockRadius, fadeStart + (i * minuteTick), fadeStart + (i * minuteTick) + minuteTick);
+            ctx.arc(CANVAS_CENTER_X, CANVAS_CENTER_Y, NEXT_12_HOUR_RADIUS, fadeStart + (i * minuteTick), fadeStart + (i * minuteTick) + minuteTick);
             ctx.stroke();
         }
 
@@ -717,9 +701,9 @@ class WeatherGauge extends Component {
         let startRad = clockTop + ((thisHour % 12) * hourTick) + (thisMinute * minuteTick);
 
         ctx.strokeStyle = goldGrad;
-        ctx.lineWidth = this.clockThickness * 1.5;
+        ctx.lineWidth = CLOCK_THICKNESS * 1.5;
         ctx.beginPath();
-        ctx.arc(this.centerX, this.centerY, this.clockRadius, startRad, startRad + 0.05);
+        ctx.arc(CANVAS_CENTER_X, CANVAS_CENTER_Y, NEXT_12_HOUR_RADIUS, startRad, startRad + 0.05);
         ctx.stroke();
     }
 
@@ -730,7 +714,7 @@ class WeatherGauge extends Component {
      */
     async drawingOrchestrator () {
         try {
-            this.ctx.clearRect(0, 0, this.deviceWidth, this.deviceWidth);
+            this.ctx.clearRect(0, 0, DEVICE_WIDTH, DEVICE_WIDTH);
             await this.drawCircleBackground(this.ctx);
             await this.drawBackgroundCircles(this.ctx, this.props.hourly);
             
@@ -765,8 +749,8 @@ class WeatherGauge extends Component {
      */
     async initCanvas () {
         try {
-            this.canvas.height = this.deviceWidth * 0.95;
-            this.canvas.width = this.deviceWidth * 0.95;
+            this.canvas.height = DEVICE_WIDTH * 0.95;
+            this.canvas.width = DEVICE_WIDTH * 0.95;
             this.ctx = await this.canvas.getContext('2d');
 
         } catch (err) {
