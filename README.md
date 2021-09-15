@@ -1,6 +1,6 @@
 # Undercast
-![Undercast Screenshot 1](/screenhsots/undercast-screenshot-1.png "Undercast Screenshot 1")
-![Undercast Screenshot 2](/screenhsots/undercast-screenshot-2.png "Undercast Screenshot 2")
+![Undercast Screenshot 1](https://github.com/robr101/Undercast/blob/master/screenshots/undercast-screenshot-1.png "Undercast Screenshot 1")
+![Undercast Screenshot 2](https://github.com/robr101/Undercast/blob/master/screenshots/undercast-screenshot-2.png "Undercast Screenshot 2")
 
 ## Description
 
