@@ -22,6 +22,7 @@ Undercast relies on OpenWeatherMap.org's One-Call API to retrieve weather foreca
 - apikey.js
     - API keys for using OpenWeatherMap and Here.com.  Note that I haven't included API keys here as it's a public repo.  This is also a terrible way to store the keys, as they'd be
       local to the app and could be viewed by any user.  In a production app you'll want to pipe requests through your own web server which holds your secrets.  Might update later with an example of how this would be done with Flask or Django.
+      UPDATE: check out @robr101/undercast-server for an example of a simple Flask app you could use to hide the API keys from the user
 
 ## Other Stuff
 
